@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    deploy:
+    runs-on: ubuntu-latest
+    env:
+      SERVER_IP: ${{ vars.SERVER_IP }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Build Docker Image"
+        run: |
+          docker login -u if1eight0sty -p $DOCKERHUB_PAT
+          docker build -t if1eight0sty/test-cicd .
+          docker push if1eight0sty/test-cicd
+        env:
+          DOCKERHUB_PAT: ${{ secrets.DOCKERHUB_PAT }}
+
+      - name: "Configure SSH"
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: "Put SSH Key in Docker file for Server Access"
+        run: |
+          touch pem.pem
+          echo $SSH_KEY64 | base64 -d > pem.pem && chmod 400 pem.pem
+          ssh-keygen -R $SERVER_IP
+        env:
+          SSH_KEY64: ${{ secrets.SSH_KEY64 }}
+
+      - name: "Docker Pull and Restart Docker"
+        run: |
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker pull if1eight0sty/test-cicd'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop cicd && docker rm cicd'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker run --name test-cicd -p 80:80 -d if1eight0sty/test-cicd'

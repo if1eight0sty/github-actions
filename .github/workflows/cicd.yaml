@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SERVER_IP: ${{ vars.SERVER_IP }}
+      SERVER_IP: ${{ secrets.SERVER_IP }}
 
     steps:
       - uses: actions/checkout@v3

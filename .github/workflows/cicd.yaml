@@ -42,5 +42,5 @@ jobs:
       - name: "Docker Pull and Restart Docker"
         run: |
           ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker pull if1eight0sty/test-cicd'
-          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop cicd && docker rm cicd'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop test-cicd && docker rm test-cicd'
           ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker run --name test-cicd -p 80:80 -d if1eight0sty/test-cicd'
